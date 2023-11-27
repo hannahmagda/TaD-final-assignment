@@ -40,6 +40,26 @@ print(data)
 ```
 
 ```{r}
-data <- data %>% mutate(value = paste0("opec.org", value))
+
+url <- data$value
+extract_text_from_link <- function(url) {
+  webpage <- read_html(url)
+  
+all_links <- page %>% html_nodes('.slim.articles a')
+links <- html_attr(all_links, "href")
+  return(links)
+```
+
+
+```{r}
+page <- read_html("https://www.opec.org/opec_web/en/press_room/7143.htm")
+
+all_links <- page %>% html_nodes('.slim.articles a')
+
+# Die href-Attributwerte (Links) aus allen ausgewählten <a>-Elementen extrahieren
+links <- html_attr(all_links, "href")
+
+# Ausgeben oder verwenden Sie die extrahierten Links
+print(links)
 ```
 
