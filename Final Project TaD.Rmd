@@ -67,9 +67,6 @@ all_extracted_links <- data %>%
   unlist()
 all_extracted_links <- paste0("https://www.opec.org", all_extracted_links)
 
-# View the character list with all the extracted links
-print(all_extracted_links)
-
 all_extracted_links <- all_extracted_links[!grepl("^https://www.opec.orghttp://", all_extracted_links)]
 
 # View the modified character vector
@@ -79,6 +76,8 @@ print(all_extracted_links)
 ```
 
 ```{r}
+
+
 extract_text_from_link <- function(url) {
   Sys.sleep(2)  # Introduce a 2-second delay
   webpage <- read_html(url)
@@ -90,5 +89,63 @@ extract_text_from_link <- function(url) {
 all_speech_text <- lapply(all_extracted_links, extract_text_from_link)
 
 head(all_speech_text)
+
+
+combined_text <- unlist(all_speech_text)
+
+# Save the text to a text file
+writeLines(combined_text, "output_text.txt")
+
+```
+
+
+
+
+Code to preserce the years next to the text
+```{r}
+# Function to extract links from a single URL
+extract_links <- function(url) {
+  page <- read_html(url)
+  all_links <- page %>% html_nodes('.slim.articles a')
+  links <- html_attr(all_links, "href")
+  return(links)
+}
+
+# Apply the function to each URL in the DataFrame
+df <- data %>%
+  mutate(extracted_links = map(value, extract_links)) %>%
+  unnest(extracted_links) %>%
+  select(-value)  # Remove the original 'value' column
+
+# View the DataFrame with the extracted links in new rows
+print(df)
+
+df <- data %>%
+  mutate(extracted_links = map(value, extract_links)) %>%
+  unnest(extracted_links) %>%
+  mutate(extracted_links = paste0("https://www.opec.org", extracted_links)) %>%
+  select(-value)  # Remove the original 'value' column
+
+df$extracted_links <- lapply(df$extracted_links, function(links) {
+  links[!grepl("^https://www.opec.orghttp://", links)]
+})
+
+df <- df %>%
+  filter(map_lgl(extracted_links, ~ length(.x) > 0))
+
+print(df)
+```
+
+
+```{r}
+# Assuming 'df' is your data frame with 'extracted_links' column
+df <- df %>%
+  filter(map_lgl(extracted_links, ~ length(.x) > 0)) %>%  # Remove rows with empty links
+  mutate(all_speech_text = map(extracted_links, extract_text_from_link)) %>%
+  unnest(all_speech_text) %>%
+  select(-extracted_links)  # Remove the original 'extracted_links' column
+
+# View the modified DataFrame
+print(df)
 ```
 
