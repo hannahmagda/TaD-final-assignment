@@ -1,0 +1,45 @@
+---
+title: "Final Project"
+author: "Carlo Greß"
+date: "2023-11-27"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+### Scraping all links available for the years 2003 to 2023
+```{r}
+url <- "https://www.opec.org/opec_web/en/press_room/307.htm"
+
+# Read the HTML content of the webpage
+page <- read_html(url)
+
+# Locate the div with the class "archives" and then select all 'option' elements within it
+options <- page %>% html_nodes(".archives option")
+
+# Extract both 'value' attribute and text content
+data <- data.frame(
+  value = options %>% html_attr("value"),
+  year = options %>% html_text()
+)
+
+# Removing first row since it is not including a linke
+data <- data %>% slice(-1)
+
+# Adding shared first part of the url to all hrefs
+data <- data %>% mutate(value = paste0("opec.org", value))
+
+# Print the extracted data
+print(data)
+```
+
+```{r}
+data <- data %>% mutate(value = paste0("opec.org", value))
+```
+
