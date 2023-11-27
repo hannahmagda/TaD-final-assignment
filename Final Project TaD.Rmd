@@ -11,6 +11,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 library(tidyverse)
+library(rvest)
+library(dplyr)
+library(purrr)
 ```
 
 ### Scraping all links available for the years 2003 to 2023
@@ -40,26 +43,52 @@ print(data)
 ```
 
 ```{r}
+data$value <- paste0("https://www.", data$value)
 
-url <- data$value
-extract_text_from_link <- function(url) {
-  webpage <- read_html(url)
-  
-all_links <- page %>% html_nodes('.slim.articles a')
-links <- html_attr(all_links, "href")
-  return(links)
+
 ```
 
 
 ```{r}
-page <- read_html("https://www.opec.org/opec_web/en/press_room/7143.htm")
 
-all_links <- page %>% html_nodes('.slim.articles a')
 
-# Die href-Attributwerte (Links) aus allen ausgewählten <a>-Elementen extrahieren
-links <- html_attr(all_links, "href")
+# Function to extract links from a single URL
+extract_links <- function(url) {
+  page <- read_html(url)
+  all_links <- page %>% html_nodes('.slim.articles a')
+  links <- html_attr(all_links, "href")
+  return(links)
+}
 
-# Ausgeben oder verwenden Sie die extrahierten Links
-print(links)
+# Apply the function to each URL in the DataFrame
+all_extracted_links <- data %>%
+  mutate(extracted_links = map(value, extract_links)) %>%
+  pull(extracted_links) %>%
+  unlist()
+all_extracted_links <- paste0("https://www.opec.org", all_extracted_links)
+
+# View the character list with all the extracted links
+print(all_extracted_links)
+
+all_extracted_links <- all_extracted_links[!grepl("^https://www.opec.orghttp://", all_extracted_links)]
+
+# View the modified character vector
+print(all_extracted_links)
+
+
+```
+
+```{r}
+extract_text_from_link <- function(url) {
+  Sys.sleep(2)  # Introduce a 2-second delay
+  webpage <- read_html(url)
+  parsed_nodes <- html_nodes(webpage, xpath = '//p')
+  speech_text <- html_text(parsed_nodes)
+  return(speech_text)
+}
+
+all_speech_text <- lapply(all_extracted_links, extract_text_from_link)
+
+head(all_speech_text)
 ```
 
