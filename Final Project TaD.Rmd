@@ -137,6 +137,18 @@ df$extracted_links <- lapply(df$extracted_links, function(links) {
 df <- df %>%
   filter(map_lgl(extracted_links, ~ length(.x) > 0))
 
+#remove row 240 and some more links as they only contain links to pdfs
+df <- df[-240, ]
+
+exclude_links <- c(
+  "https://www.opec.org/opec_web/en/press_room/414.htm",
+  "https://www.opec.org/opec_web/en/press_room/878.htm",
+  "https://www.opec.org/opec_web/en/press_room/871.htm"
+)
+
+df <- df %>%
+  filter(!(extracted_links %in% exclude_links))
+
 print(df)
 ```
 
@@ -158,48 +170,50 @@ print(df)
 
 
 
-Code to get the meta-information in separat coloumns
-
 ```{r}
+
+# scraper
 extract_text_from_link <- function(url) {
-  Sys.sleep(2)  # Introduce a 2-second delay
-  webpage <- read_html(url)
-  
-  # Extract text from the <h1> element
-  header_text <- html_text(html_nodes(webpage, "h1"))
-  
-  # Extract text from the <h5> element
-  information_text <- html_text(html_nodes(webpage, "h5"))
-  
-  # Extract text from all <p> elements and concatenate into a single string
-  speech_text <- paste(html_text(html_nodes(webpage, "p")), collapse = " ")
-  
-  # Check if speech_text is empty
-  if (length(speech_text) == 0) {
-    cat("No text extracted for URL:", url, "\n")
-    return(NULL)
-  }
-  
-  # Create a data frame with the extracted text
-  result_df <- data.frame(header = header_text, information = information_text, speech = speech_text)
-  
-  return(result_df)
+  tryCatch(
+    {
+      Sys.sleep(2)  # Introduce a 2-second delay
+      webpage <- read_html(url)
+      
+      # Extract text from the <h1> element
+      header_text <- html_text(html_nodes(webpage, "h1"))
+      
+      # Extract text from the <h5> element
+      information_text <- html_text(html_nodes(webpage, "h5"))
+      
+      # Extract text from all <p> elements and concatenate into a single string
+      speech_text <- paste(html_text(html_nodes(webpage, "p")), collapse = " ")
+      
+      # Check if speech_text is empty
+      if (length(speech_text) == 0) {
+        cat("No text extracted for URL:", url, "\n")
+        return(NULL)
+      }
+      
+      # Create a data frame with the extracted text
+      result_df <- data.frame(header = header_text, information = information_text, speech = speech_text)
+      
+      return(result_df)
+    },
+    error = function(e) {
+      cat("Error scraping URL:", url, "- Message:", conditionMessage(e), "\n")
+      return(NULL)
+    }
+  )
 }
 
-```
-
-works for subst of data but gives an error when trying with all the links 
-
-```{r}
-
+# get speeches
 all_speeches <- df %>%
   filter(map_lgl(extracted_links, ~ length(.x) > 0)) %>%
   mutate(all_speech_text = map(extracted_links, extract_text_from_link)) %>%
   unnest(all_speech_text) %>%
   select(-extracted_links)
 
-# View the test DataFrame
-head(all_speeches)
-```
+write.csv(all_speeches, "speeches.csv", row.names = FALSE)
 
+```
 
