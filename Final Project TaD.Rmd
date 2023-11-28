@@ -44,13 +44,10 @@ print(data)
 
 ```{r}
 data$value <- paste0("https://www.", data$value)
-
-
 ```
 
 
 ```{r}
-
 
 # Function to extract links from a single URL
 extract_links <- function(url) {
@@ -215,5 +212,66 @@ all_speeches <- df %>%
 
 write.csv(all_speeches, "speeches.csv", row.names = FALSE)
 
+```
+
+### Extracting the names of the speakers
+
+```{r}
+library(stringr)
+
+# Extract names using case-insensitive regular expression
+all_speeches$name <- str_extract(all_speeches$information, "(?i)by\\s+([^,]+)(?:,\\s+|$)")
+
+# Remove the leading "by " from the extracted names
+all_speeches$name <- str_replace(all_speeches$name, "(?i)by\\s+", "")
+
+# Conditionally update names for "OPEC Secretary General"
+update_condition <- all_speeches$name == "OPEC Secretary General" & !is.na(all_speeches$information)
+all_speeches$name <- ifelse(update_condition, 
+                            str_extract(all_speeches$information, "(?i)by\\s+[^,]+,\\s+([^,]+)"), 
+                            all_speeches$name)
+
+# Remove "by OPEC Secretary General," from some cells
+all_speeches$name <- str_replace(all_speeches$name, "(?i)by\\s+OPEC Secretary General,", "")
+
+# Remove comma
+all_speeches$name <- str_replace_all(all_speeches$name, ",", "")
+
+# Display the result
+print(all_speeches)
+```
+
+### Sometimes, after the first "by", OPEC Secretary General stand in front of the name. The next chunk removes that and stores the name instead. 
+```{r}
+all_speeches <- all_speeches %>%
+  mutate(
+    name = case_when(
+      name %in% c("OPEC Secretary General", "OPEC's Secretary General", "OPEC's Director of Research Division", "OPEC Conference President") ~ 
+        str_trim(str_extract(information, "(?<=,\\s)[^,]+"), side = "both"),
+      TRUE ~ str_trim(name, side = "both")
+    )
+  )
+
+all_speeches$name <- str_replace(all_speeches$name, "by\\s+Secretary General,", "")
+
+print(all_speeches)
+```
+Some edge cases are hard to rename with a condition, hence we manually insert the names
+```{r}
+all_speeches <- all_speeches %>%
+  mutate(
+    name = case_when(
+      row_number() == 215 ~ "HE Abdulla Salam El-Badri",
+      row_number() == 250 ~ NA_character_,
+      row_number() == 309 ~ "Dr Adnan Shibab-Eldin",
+      row_number() == 324 ~ NA_character_,
+      TRUE ~ name
+    )
+  )
+
+# Display the result
+print(all_speeches)
+
+write.csv(all_speeches, "speeches.csv", row.names = FALSE)
 ```
 
