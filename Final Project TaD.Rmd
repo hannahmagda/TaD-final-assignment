@@ -293,8 +293,18 @@ all_speeches <- all_speeches %>%
 all_speeches$role <- sub('^[^A-Z]+\\s*', '', all_speeches$role)
 all_speeches$role <- sub('.*Secretary General.*', 'Secretary General', all_speeches$role)
 
-# Display the updated data frame
-print(df)
+# Manually adding Secretary General to Mr Silva Calderon since pattern differs slightly
+all_speeches <- all_speeches %>%
+  mutate(role = ifelse(name %in% c('Dr. Alvaro Silva-Calderón', 'Dr. Alvaro Silva Calderón', 'Dr Alvaro Silva-Calderón'), 'Secretary General', role))
+
+all_speeches <- all_speeches %>%
+  mutate(role = ifelse(name %in% c('Dr. Edmund M. Daukoru'), 'President of the OPEC Conference', role))
+
+all_speeches <- all_speeches %>%
+  mutate(name = gsub('^(\\s*HE|\\s*Dr\\.?|\\s*Mr\\.?)\\s+', '', name))
+
+all_speeches <- all_speeches %>% 
+  select(year, header, name, role, type, information, speech)
 ```
 
 
