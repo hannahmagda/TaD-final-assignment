@@ -14,6 +14,7 @@ library(tidyverse)
 library(rvest)
 library(dplyr)
 library(purrr)
+library(XML)
 ```
 
 ### Scraping all links available for the years 2003 to 2023
@@ -274,4 +275,27 @@ print(all_speeches)
 
 write.csv(all_speeches, "speeches.csv", row.names = FALSE)
 ```
+
+### Extracting speaker's role and type of speech
+
+```{r}
+
+# Adding type of speech using the header variable 
+
+all_speeches <- all_speeches %>%
+  mutate(type = ifelse(grepl('by', header), sub(' by.*', '', header), sub('^(\\S+\\s+\\S+).*', '\\1', header)))
+
+# Adding role of speaker 
+
+all_speeches <- all_speeches %>%
+  mutate(role = ifelse(grepl('by', header), sub('.* by\\s+', '', header), sub('.*? by\\s+', '', header)))
+
+all_speeches$role <- sub('^[^A-Z]+\\s*', '', all_speeches$role)
+all_speeches$role <- sub('.*Secretary General.*', 'Secretary General', all_speeches$role)
+
+# Display the updated data frame
+print(df)
+```
+
+
 
