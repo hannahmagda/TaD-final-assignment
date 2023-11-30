@@ -305,7 +305,21 @@ all_speeches <- all_speeches %>%
 
 all_speeches <- all_speeches %>% 
   select(year, header, name, role, type, information, speech)
+
+
+
 ```
 
+
+###add links to the dataframe so we can look into special cases
+```{r}
+all_speeches <- read.csv("speeches.csv")
+
+all_speeches['link']= df['extracted_links']
+
+all_speeches <- all_speeches %>%
+  mutate(link = map_chr(link, toString))
+
+```
 
 
