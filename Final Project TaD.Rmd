@@ -208,7 +208,7 @@ extract_text_from_link <- function(url) {
 all_speeches <- df %>%
   filter(map_lgl(extracted_links, ~ length(.x) > 0)) %>%
   mutate(all_speech_text = map(extracted_links, extract_text_from_link)) %>%
-  unnest(all_speech_text) %>%
+  unnest(all_speech_text)
   select(-extracted_links)
 
 write.csv(all_speeches, "speeches.csv", row.names = FALSE)
@@ -305,20 +305,21 @@ all_speeches <- all_speeches %>%
 
 all_speeches <- all_speeches %>% 
   select(year, header, name, role, type, information, speech)
-
-
-
 ```
 
+### Extract dates
 
-###add links to the dataframe so we can look into special cases
 ```{r}
-all_speeches <- read.csv("speeches.csv")
+library(stringr)
 
-all_speeches['link']= df['extracted_links']
+# Define the regular expression pattern for the specified date formats
+date_pattern <- "\\b\\d{1,2} (?:January|February|March|April|May|June|July|August|September|October|November|December) \\d{4}\\b"
 
-all_speeches <- all_speeches %>%
-  mutate(link = map_chr(link, toString))
+# Extract dates from the 'information' column and create a new 'date' column
+all_speeches$date <- str_extract(all_speeches$information, date_pattern)
+
+# Print the dataframe with the new 'date' column
+print(all_speeches[c('information', 'date')])
 
 ```
 
